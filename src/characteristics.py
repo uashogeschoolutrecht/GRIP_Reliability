@@ -1,0 +1,132 @@
+import numpy as np
+from neurokit2.complexity import complexity_lempelziv
+import EntropyHub as EH
+import statistics
+from src.utils import *
+import logging
+from datetime import date
+import pandas as pd
+import numpy as np
+import yaml
+from src.utils import *
+import os
+import tensorflow as tf
+import matplotlib.pyplot as plt
+
+
+def characteristics(data, data_df, file):
+    results = {}
+    results['Name'] = file
+    results['Samples'] = len(data_df)
+    results['Samples_worn'] = len(data_df.loc[data_df['Worn_sensor'] == 1])
+    results['Epochs of 1 minute'] = len(data)
+    # Info all data
+    results['average_activity_level'] = np.mean(data)
+
+    # Info about changes
+    differences = np.diff(data)
+    results['std_change'] = np.std(differences)
+    indx_changes = np.where(differences != 0)[0] + 1
+    results['per_change'] = len(indx_changes) / len(data) * 100
+
+    # per epoch (can be longer than ML-output length)
+    epochs = []
+    epochs.append(data[0:indx_changes[0]])
+    for num, indx in enumerate(indx_changes[:-1]):
+        epochs.append(data[indx:indx_changes[num+1]])
+    epochs.append(data[indx_changes[-1]:])
+
+    # Set epoch per activity
+    sedentairy = []
+    light = []
+    moderate = []
+    vigorous = []
+    for epoch in epochs:
+        if epoch[0] == 0:
+            sedentairy.append(epoch)
+        elif epoch[0] == 1:
+            light.append(epoch)
+        elif epoch[0] == 2:
+            moderate.append(epoch)
+        else:
+            vigorous.append(epoch)
+
+    # Get results per activity
+    unique, counts = np.unique(data, return_counts=True)
+    for i in zip(unique, counts):
+        if i[0] == 0:
+            activity = 'sedentairy'
+        elif i[0] == 1:
+            activity = 'light'
+        elif i[0] == 2:
+            activity = 'moderate'
+        else:
+            activity = 'vigorous'
+        results[f'{activity}_count'] = i[1]
+        results[f'{activity}_perc'] = i[1] / len(data) * 100
+
+        # Percentage epochs
+        activity_epochs = eval(activity)
+        results[f'epochs_{activity}_perc'] = len(
+            activity_epochs) / len(epochs) * 100
+
+        # Median and average epoch length
+        bout_lengths = [len(sublist) for sublist in activity_epochs]
+        results.update(alfa_sigma_gini(bout_lengths, activity))
+        results[f'{activity}_median_length'] = np.median(bout_lengths)
+        results[f'epochs_{activity}_average_length'] = np.average(bout_lengths)
+        results[f'epochs_{activity}_max_length'] = np.max(bout_lengths)
+
+    # Complexity features
+    results[f'Sample_entropy'] = EH.SampEn(data, m=2)[0][-1]
+    p_vector = probability(np.array(data)+1)
+    results[f'info_entropy'] = entropy(p_vector)
+    results[f'PLZC'], _ = complexity_lempelziv(data, permutation=True)
+    return results
+
+
+def alfa_sigma_gini(bout_lengths, activity):
+    outcomes = {}
+    if not bout_lengths:
+        outcomes[f'weight_median_{activity}'] = np.nan
+        outcomes[f'alfa_{activity}'] = np.nan
+        outcomes[f'sigma_{activity}'] = np.nan
+        outcomes[f'gini_{activity}'] = np.nan
+    else:
+        # Sort data
+        arraySort = np.sort(bout_lengths)
+        totalTim = np.sum(bout_lengths)
+
+        # Weighted median
+        cumsumnewWeighted = np.cumsum(arraySort / totalTim)
+        nearest = find_nearest(cumsumnewWeighted, 0.5)
+        weightedMedian = arraySort[np.where(
+            cumsumnewWeighted == nearest)[0]][0]
+        outcomes[f'weight_median_{activity}'] = weightedMedian
+        # Alfa and sigma
+        temp = []
+        for idx in range(len(bout_lengths)):
+            temp.append((np.log(bout_lengths[idx] / 1)))
+        n = len(bout_lengths)
+        temp = sum(temp) ** -1
+        alfa = 1 + len(bout_lengths) * temp
+        sigma = (alfa - 1) / np.sqrt(n)
+        outcomes[f'alfa_{activity}'] = alfa
+        outcomes[f'sigma_{activity}'] = sigma
+
+        # Gini
+        arraySortPerc = (arraySort / sum(arraySort)) * 100
+        arraySortPerc_shares = [i / 100 for i in arraySortPerc]
+        arraySortPerc_quintile_shares = [(arraySortPerc_shares[i] + arraySortPerc_shares[i + 1]) for i in
+                                         range(0, len(arraySortPerc_shares) - 1, 2)]
+        arraySortPerc_quintile_shares.insert(0, 0)
+        shares_cumsum = np.cumsum(
+            a=arraySortPerc_quintile_shares, axis=None)
+        pe_line = np.linspace(start=0.0, stop=1.0, num=len(shares_cumsum))
+        x = np.arange(0, 1, 1 / len(shares_cumsum))
+        area_under_lorenz = np.trapz(
+            y=shares_cumsum, dx=1 / len(shares_cumsum))
+        area_under_pe = np.trapz(y=pe_line, dx=1 / len(shares_cumsum))
+        gini = (area_under_pe - area_under_lorenz) / area_under_pe
+        outcomes[f'gini_{activity}'] = gini
+    return outcomes
