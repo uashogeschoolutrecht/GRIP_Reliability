@@ -16,10 +16,13 @@ import logging
 from datetime import date
 import pandas as pd
 from src.utils import *
-from src.characteristics import characteristics
+from src.characteristics import characteristics, characteristics_pain
 from src.prepare_data import prepare_data
 from src.predict_data import predict_data
 import os
+from datetime import datetime
+
+
 logging.basicConfig(
     filename=f'logging/warnings_{date.today()}.log', level=logging.WARN)
 
@@ -27,7 +30,7 @@ logging.basicConfig(
 # More specific settings can be found in the config_file.
 settings = {
     'VERBOSE': True,
-    'VISUALISE': True,
+    'VISUALISE': False,
     'PROCESS_ALL_DATA': False,  # set run_all to True to rerun all data
     'RAW_DATA_DIR': 'data/raw_data',
     'CONFIG_DIR': 'config'
@@ -38,29 +41,67 @@ settings = {
 
 def main():
     config = load_config(settings, config_name="config_file.yaml")
-    files = os.listdir(settings['RAW_DATA_DIR'])
+    subjects = os.listdir(settings['RAW_DATA_DIR'])
+    final_results = pd.DataFrame()
 
     # Load data
-    for file in files:
-        file_name = file.split('.')[0]
+    for subject in subjects:
 
-        # Load data, downsample and remove not worn
-        data_df = prepare_data(file, config, settings)
+        try:
+            if subject.endswith('.DS_Store'):
+                continue
+            painscores = pd.read_csv(
+                f'data/raw_data/{subject}/pain_score/{subject}_pain_score.csv', index_col=0)
+            days = os.listdir(f"{settings['RAW_DATA_DIR']}/{subject}")
+            days.remove('pain_score')
 
-        # Predict data based on a previously trained ML algorithm
-        chunk_size = 6
-        data = predict_data(data_df, config, settings,
-                            file_name, file, chunk_size)
+            for day in days:
+                if day.endswith('.csv'):
+                    continue
+                try:
+                    results = {}
 
-        results = characteristics(data, data_df, file)
+                    file_path = os.listdir(
+                        f"{settings['RAW_DATA_DIR']}/{subject}/{day}")[0]
+                    file = f"{subject}/{day}/{file_path}"
+                    file_name = f"{subject}_{day}"
 
-        results_df = pd.DataFrame.from_dict(
-            results, orient='index').transpose()
-        for column in results_df.columns[4:]:
-            results_df[column] = pd.to_numeric(
-                results_df.loc[:, column]).round(3)
+                    # Load data, downsample and remove not worn
+                    data_df, not_worn_samples = prepare_data(
+                        file, config, settings)
 
-        results_df.to_excel('Results/test.xlsx', index=False)
+                    # Predict data based on a previously trained ML algorithm
+                    chunk_size = 6
+                    data = predict_data(data_df, config, settings,
+                                        file_name, file, chunk_size)
+
+                    results['subject'] = subject
+                    results['day'] = day
+                    results['Samples'] = len(data_df)
+                    results['not_worn_samples'] = not_worn_samples
+                    results['Name'] = file
+                    results = characteristics(results, data)
+
+                    # Parse the date
+                    try:
+                        results = characteristics_pain(
+                            painscores, results, day)
+                    except Exception as e:
+                        logging.error(f'pain: {subject} {day} {e}')
+                    results_df = pd.DataFrame.from_dict(
+                        results, orient='index').transpose()
+                    for column in results_df.columns[4:]:
+                        results_df[column] = pd.to_numeric(
+                            results_df.loc[:, column]).round(3)
+                    final_results = pd.concat((final_results, results_df))
+                except Exception as e:
+                    logging.error(f'day: {subject} {day} {e}')
+        except Exception as e:
+            logging.error(f'subject: {subject} {day} {e}')
+
+    final_results.to_excel('Results/test.xlsx', index=False)
+    final_results.loc[:, 'average_activity_level':].corr().to_excel(
+        'Results/correlations.xlsx')
 
 
 if __name__ == '__main__':

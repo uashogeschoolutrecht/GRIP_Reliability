@@ -64,10 +64,11 @@ def prepare_data(file, config, settings):
             data_df.iloc[start:end, 'Worn_sensor'] = 0
 
     # Drop data that has more than a minute of inactivity
+    not_worn_samples = len(data_df.loc[data_df['Worn_sensor'] == 0])
     data_df = data_df.loc[data_df['Worn_sensor'] == 1]
 
     # Drop the first and last 30 seconds
     samples_per_halfmin = int(config['frequency'] * 30)
     data_df = data_df.iloc[samples_per_halfmin:len(
         data_df)-samples_per_halfmin, :]
-    return data_df
+    return data_df, not_worn_samples

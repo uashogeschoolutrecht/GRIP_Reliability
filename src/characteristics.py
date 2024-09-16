@@ -14,11 +14,7 @@ import tensorflow as tf
 import matplotlib.pyplot as plt
 
 
-def characteristics(data, data_df, file):
-    results = {}
-    results['Name'] = file
-    results['Samples'] = len(data_df)
-    results['Samples_worn'] = len(data_df.loc[data_df['Worn_sensor'] == 1])
+def characteristics(results, data):
     results['Epochs of 1 minute'] = len(data)
     # Info all data
     results['average_activity_level'] = np.mean(data)
@@ -130,3 +126,18 @@ def alfa_sigma_gini(bout_lengths, activity):
         gini = (area_under_pe - area_under_lorenz) / area_under_pe
         outcomes[f'gini_{activity}'] = gini
     return outcomes
+
+
+def characteristics_pain(painscores, results, day):
+    painscores['Date'] = pd.to_datetime(
+        painscores['Date'], format='mixed', dayfirst=True, errors='coerce')
+    painscores['Standardized Date'] = painscores['Date'].dt.strftime(
+        '%Y-%m-%d')
+    painscore = painscores.loc[painscores['Standardized Date'] == day]
+    results['pijn gem'] = painscore.loc[:,
+                                        '6:00':'0:00'].dropna(axis=1).values.mean()
+    results['pijn std'] = painscore.loc[:,
+                                        '6:00':'0:00'].dropna(axis=1).values.std()
+    results['pijn max'] = painscore.loc[:,
+                                        '6:00':'0:00'].dropna(axis=1).values.max()
+    return results

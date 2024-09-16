@@ -56,21 +56,21 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
 
     # visualise activities per 10 seconds
     if settings['VISUALISE']:
-        x_axis = (np.arange(len(predicted_values)) * 10) / 60
+        x_axis = (np.arange(len(predicted_values)) * 10) / 60 / 60
         fig, ax = plt.subplots()
         ax.plot(x_axis, predicted_values)
-        ax.set_title(f'Activities during 4 hours for file: '
+        ax.set_title(f'Activities for file: '
                      f'{file} per 10 seconds')
         ax.set_ylabel('Activity')
-        ax.set_xlabel('Time [minutes]')
+        ax.set_xlabel('Time [hours]')
 
     # visualise activities per chunk size
     if settings['VISUALISE']:
-        x_axis = np.arange(len(most_common_per_chunk))
+        x_axis = np.arange(len(most_common_per_chunk)) / 60
         fig, ax = plt.subplots()
         ax.plot(x_axis, most_common_per_chunk)
-        ax.set_title(f'Activities during 4 hours for file: {file}')
+        ax.set_title(f'Activities for file: {file}')
         ax.set_ylabel('Activity')
-        ax.set_xlabel('Time [minutes]')
+        ax.set_xlabel('Time [hours]')
 
     return most_common_per_chunk
