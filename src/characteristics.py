@@ -26,11 +26,14 @@ def characteristics(results, data):
     results['per_change'] = len(indx_changes) / len(data) * 100
 
     # per epoch (can be longer than ML-output length)
-    epochs = []
-    epochs.append(data[0:indx_changes[0]])
-    for num, indx in enumerate(indx_changes[:-1]):
-        epochs.append(data[indx:indx_changes[num+1]])
-    epochs.append(data[indx_changes[-1]:])
+    if indx_changes.size == 0:
+        epochs = [data]
+    else:
+        epochs = []
+        epochs.append(data[0:indx_changes[0]])
+        for num, indx in enumerate(indx_changes[:-1]):
+            epochs.append(data[indx:indx_changes[num+1]])
+        epochs.append(data[indx_changes[-1]:])
 
     # Set epoch per activity
     sedentairy = []
@@ -128,16 +131,20 @@ def alfa_sigma_gini(bout_lengths, activity):
     return outcomes
 
 
-def characteristics_pain(painscores, results, day):
+def characteristics_pain(painscores, results, day, time=None):
     painscores['Date'] = pd.to_datetime(
         painscores['Date'], format='mixed', dayfirst=True, errors='coerce')
     painscores['Standardized Date'] = painscores['Date'].dt.strftime(
         '%Y-%m-%d')
     painscore = painscores.loc[painscores['Standardized Date'] == day]
-    results['pijn gem'] = painscore.loc[:,
-                                        '6:00':'0:00'].dropna(axis=1).values.mean()
-    results['pijn std'] = painscore.loc[:,
-                                        '6:00':'0:00'].dropna(axis=1).values.std()
-    results['pijn max'] = painscore.loc[:,
-                                        '6:00':'0:00'].dropna(axis=1).values.max()
+    if time:
+        results['pijn score'] = painscore[time].values[0]
+        results['tijd'] = time
+    else:
+        results['pijn gem'] = painscore.loc[:,
+                                            '6:00':'0:00'].dropna(axis=1).values.mean()
+        results['pijn std'] = painscore.loc[:,
+                                            '6:00':'0:00'].dropna(axis=1).values.std()
+        results['pijn max'] = painscore.loc[:,
+                                            '6:00':'0:00'].dropna(axis=1).values.max()
     return results
