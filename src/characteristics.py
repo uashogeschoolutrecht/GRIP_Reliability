@@ -12,6 +12,7 @@ from src.utils import *
 import os
 import tensorflow as tf
 import matplotlib.pyplot as plt
+from collections import Counter
 
 
 def characteristics(results, data):
@@ -86,7 +87,7 @@ def characteristics(results, data):
 
 def alfa_sigma_gini(bout_lengths, activity):
     outcomes = {}
-    if not bout_lengths:
+    if len(Counter(bout_lengths)) <= 1:
         outcomes[f'weight_median_{activity}'] = np.nan
         outcomes[f'alfa_{activity}'] = np.nan
         outcomes[f'sigma_{activity}'] = np.nan

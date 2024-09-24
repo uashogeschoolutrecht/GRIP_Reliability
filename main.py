@@ -30,6 +30,7 @@ logging.basicConfig(
 # More specific settings can be found in the config_file.
 settings = {
     'PAIN_SCORES': True,
+    'RESULTS_2HOURS': True,
     'VERBOSE': True,
     'VISUALISE': False,
     'PROCESS_ALL_DATA': False,  # set run_all to True to rerun all data
@@ -41,22 +42,24 @@ settings = {
 
 
 def main():
-    # The number of 10 seconds activities to compute features
-    chunk_size = 6
-
+    # Load config file and settings
     config = load_config(settings, config_name="config_file.yaml")
     subjects = os.listdir(settings['RAW_DATA_DIR'])
     final_results = pd.DataFrame()
-    final_results_2hours = pd.DataFrame()
+    if settings['RESULTS_2HOURS']:
+        final_results_2hours = pd.DataFrame()
 
     # Loop over subjecs
     for subject in subjects:
         try:
             if subject.endswith('.DS_Store'):
                 continue
-            # Load painscores
-            painscores = pd.read_csv(
-                f'data/raw_data/{subject}/pain_score/{subject}_pain_score.csv', index_col=0)
+
+            if settings['PAIN_SCORES']:
+                # Load painscores
+                painscores = pd.read_csv(
+                    f'data/raw_data/{subject}/pain_score/{subject}_pain_score.csv', index_col=0)
+
             days = os.listdir(f"{settings['RAW_DATA_DIR']}/{subject}")
             days.remove('pain_score')
 
@@ -74,14 +77,18 @@ def main():
                     # Load data, downsample and remove not worn
                     data_df, endtime, begintime = prepare_data(
                         file, config, settings)
-                    two_hours_epochs = split_data(
+
+                    data_df = split_data(
                         data_df, begintime, endtime, config)
+
+                    # Drop first and last 30 seconds and drop not worn
                     data_df, not_worn_samples = clean_data(
                         data_df, config, all=True)
 
                     # Predict data based on a previously trained ML algorithm
                     data = predict_data(data_df, config, settings,
-                                        file_name, file, chunk_size)
+                                        file_name, file, config['chunk_size'])
+
                     results['subject'] = subject
                     results['day'] = day
                     results['Samples'] = len(data_df)
@@ -89,13 +96,18 @@ def main():
                     results['Name'] = file
                     results['begintime'] = begintime
                     results['endtime'] = endtime
-                    results = characteristics(results, data)
-                    # Parse the date
-                    try:
-                        results = characteristics_pain(
-                            painscores, results, day)
-                    except Exception as e:
-                        logging.error(f'pain: {subject} {day} {e}')
+                    results = characteristics(
+                        results, data['activities [1min]'].values)
+
+                    # Pain score data
+                    if settings['PAIN_SCORES']:
+                        try:
+                            results = characteristics_pain(
+                                painscores, results, day)
+                        except Exception as e:
+                            logging.error(f'pain: {subject} {day} {e}')
+
+                    # data to dataframe
                     results_df = pd.DataFrame.from_dict(
                         results, orient='index').transpose()
                     for column in results_df.columns[7:]:
@@ -104,43 +116,49 @@ def main():
                     final_results = pd.concat((final_results, results_df))
 
                     # Predict data based on a previously trained ML algorithm
-                    for key, epoch in two_hours_epochs.items():
-                        results = {}
-                        data = predict_data(epoch, config, settings,
-                                            file_name, file, chunk_size)
-                        results['subject'] = subject
-                        results['day'] = day
-                        results['Samples'] = len(data_df)
-                        results['not_worn_samples'] = not_worn_samples
-                        results['Name'] = file
-                        results['begintime'] = begintime
-                        results['endtime'] = endtime
-                        results['key'] = key
+                    if settings['RESULTS_2HOURS']:
+                        for key in data['time_2hours'].unique():
+                            if key == '':
+                                continue
+                            tmp_data = data.loc[data['time_2hours'] == key]
 
-                        try:
-                            results = characteristics_pain(
-                                painscores, results, day, time=f'{key.split('_')[0]}:00')
-                        except Exception as e:
-                            logging.error(f'pain: {subject} {day} {e}')
+                            results = {}
+                            results['subject'] = subject
+                            results['day'] = day
+                            results['Samples'] = len(tmp_data)
+                            results['not_worn_samples'] = not_worn_samples
+                            results['Name'] = file
+                            results['begintime'] = begintime
+                            results['endtime'] = endtime
+                            results['key'] = key
+                            if settings['PAIN_SCORES']:
+                                try:
+                                    results = characteristics_pain(
+                                        painscores, results, day, time=f'{key.split('_')[0]}:00')
+                                except Exception as e:
+                                    logging.error(f'pain: {subject} {day} {e}')
 
-                        results = characteristics(results, data)
-                        results_df = pd.DataFrame.from_dict(
-                            results, orient='index').transpose()
-                        for column in results_df.columns[10:]:
-                            results_df[column] = pd.to_numeric(
-                                results_df.loc[:, column]).round(3)
-                        final_results_2hours = pd.concat(
-                            (final_results_2hours, results_df))
+                            results = characteristics(
+                                results, tmp_data['activities [1min]'].values)
+                            results_df = pd.DataFrame.from_dict(
+                                results, orient='index').transpose()
+                            for column in results_df.columns[10:]:
+                                results_df[column] = pd.to_numeric(
+                                    results_df.loc[:, column]).round(3)
+                            final_results_2hours = pd.concat(
+                                (final_results_2hours, results_df))
 
                 except Exception as e:
                     logging.error(f'day: {subject} {day} {e}')
         except Exception as e:
             logging.error(f'subject: {subject} {day} {e}')
 
-    final_results.to_excel('Results/test.xlsx', index=False)
+    final_results.to_excel('Results/results_per_day.xlsx', index=False)
     final_results.loc[:, 'average_activity_level':].corr().to_excel(
-        'Results/correlations.xlsx')
-    final_results_2hours.to_excel('Results/results_2hours.xlsx', index=False)
+        'Results/correlations_per_day.xlsx')
+    if settings['RESULTS_2HOURS']:
+        final_results_2hours.to_excel(
+            'Results/results_per_2hours.xlsx', index=False)
 
 
 if __name__ == '__main__':

@@ -42,6 +42,9 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
     predicted_values = np.argmax(predicted_values, axis=1)
     predicted_values_df = pd.DataFrame(
         predicted_values, columns=['activities [10 sec]'])
+    predicted_values_df = predicted_values_df.merge(data_df.drop_duplicates(subset='group')[['time_2hours', 'group']],
+                                                    left_index=True,  # Use index from predicted_values_df
+                                                    right_on='group').reset_index(drop=True)
     predicted_values_df.to_csv(f'data/ten_sec/{file_name}_10sec.csv')
 
     # values per minute
@@ -52,6 +55,9 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
     most_common_per_chunk = [mean_value(chunk) for chunk in chunks[:-1]]
     most_common_per_chunk_df = pd.DataFrame(
         most_common_per_chunk, columns=['activities [1min]'])
+    most_common_per_chunk_df = most_common_per_chunk_df.merge(predicted_values_df[::6].reset_index()['time_2hours'],
+                                                              left_index=True,  # Merge on the index of most_common_per_chunk
+                                                              right_index=True)
     most_common_per_chunk_df.to_csv(f'data/one_min/{file_name}_1min.csv')
 
     # visualise activities per 10 seconds
@@ -73,4 +79,4 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
         ax.set_ylabel('Activity')
         ax.set_xlabel('Time [hours]')
 
-    return most_common_per_chunk
+    return most_common_per_chunk_df

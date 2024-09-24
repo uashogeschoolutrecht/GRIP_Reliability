@@ -49,11 +49,11 @@ def round_time_to_two_hours(dt, mode):
 
 
 def split_data(data_df, begintime, endtime, config):
+    data_df['time_2hours'] = ''
     corrected_begintime = round_time_to_two_hours(
         begintime, "begin")
     corrected_endtime = round_time_to_two_hours(endtime, "end")
     two_hours = timedelta(seconds=7200)
-    two_hours_epochs = {}
 
     for epoch in range(int((corrected_endtime - corrected_begintime) / two_hours)):
         start = corrected_begintime + two_hours * epoch
@@ -62,9 +62,9 @@ def split_data(data_df, begintime, endtime, config):
             (start - begintime).seconds * config['frequency'])
         sample_end = int(
             (end - begintime).seconds * config['frequency'])
-        two_hours_epochs[f'{start.hour}_'
-                         f'{end.hour}'] = data_df[sample_start:sample_end]
-    return two_hours_epochs
+        data_df.loc[sample_start:sample_end, 'time_2hours'] = f'{
+            start.hour}_{end.hour}'
+    return data_df
 
 
 def clean_data(data_df, config, all=False):

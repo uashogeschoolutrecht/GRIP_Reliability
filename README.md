@@ -22,7 +22,7 @@ The project is designed to take raw accelerometer data, preprocess it, classify 
 Create data folder and add subfolders
 
 - Set the sample frequency and sample size in the config file.
-- Add data to the raw_data folder
+- Add data to the raw_data folder -> data/raw_data/subject/days/sensorfile.csv
 
 Create virtual env
 
