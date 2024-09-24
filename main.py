@@ -151,7 +151,7 @@ def main():
                     logging.error(f'day: {subject} {day} {e}')
         except Exception as e:
             logging.error(f'subject: {subject} {day} {e}')
-        break
+
     final_results.to_excel('Results/results_per_day.xlsx', index=False)
     final_results.loc[:, 'average_activity_level':].corr().to_excel(
         'Results/correlations_per_day.xlsx')

@@ -107,14 +107,15 @@ def prepare_data(file, config, settings):
     data_df['Worn_sensor'] = 1
     samples_per_minute = int(config['frequency'] * 60)
     samples = int(np.floor(len(data_df) / samples_per_minute))
+
     for num in range(samples):
         start = samples_per_minute * num
         end = samples_per_minute * num + samples_per_minute
         sample = data_df.iloc[start:end, :]
         std = (np.std(sample['acc_x']) +
                np.std(sample['acc_y']) + np.std(sample['acc_z'])) / 3
-        if std < 10 ** (-6):
-            data_df.iloc[start:end, 'Worn_sensor'] = 0
+        if std < 10 ** (-3):
+            data_df.loc[start:end, 'Worn_sensor'] = 0
 
     enddate = file.split('_')[-2]
     endhour = file.split('_')[-1].split('.')[0]
