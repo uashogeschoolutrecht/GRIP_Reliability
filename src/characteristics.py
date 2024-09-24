@@ -16,7 +16,7 @@ from collections import Counter
 
 
 def characteristics(results, data):
-    results['Epochs of 1 minute'] = len(data)
+    results['Epochs_of_1minute'] = len(data)
     # Info all data
     results['average_activity_level'] = np.mean(data)
 
@@ -139,13 +139,13 @@ def characteristics_pain(painscores, results, day, time=None):
         '%Y-%m-%d')
     painscore = painscores.loc[painscores['Standardized Date'] == day]
     if time:
-        results['pijn score'] = painscore[time].values[0]
+        results['pijn_score'] = painscore[time].values[0]
         results['tijd'] = time
     else:
-        results['pijn gem'] = painscore.loc[:,
+        results['pijn_gem'] = painscore.loc[:,
                                             '6:00':'0:00'].dropna(axis=1).values.mean()
-        results['pijn std'] = painscore.loc[:,
+        results['pijn_std'] = painscore.loc[:,
                                             '6:00':'0:00'].dropna(axis=1).values.std()
-        results['pijn max'] = painscore.loc[:,
+        results['pijn_max'] = painscore.loc[:,
                                             '6:00':'0:00'].dropna(axis=1).values.max()
     return results

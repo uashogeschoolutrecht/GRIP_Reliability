@@ -90,7 +90,7 @@ def main():
 
                     results['subject'] = subject
                     results['day'] = day
-                    results['Samples'] = len(data_df)
+                    results['Samples'] = len(data_df) + not_worn_samples
                     results['not_worn_samples'] = not_worn_samples
                     results['Name'] = file
                     results['begintime'] = begintime
