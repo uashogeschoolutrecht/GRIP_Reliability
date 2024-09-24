@@ -2,13 +2,13 @@
 # %%
 '''
 Main script for the GRIP HAP project.
-
-- Run the script to process raw data
+- Run thisthe script to process raw data
 - Get activity scores for every 10 seconds / minute
 - creates an excel with outcomes per person per measurement (day)
 
+
 # TODO
-# Add pain scores
+
 
 '''
 
@@ -29,6 +29,7 @@ logging.basicConfig(
 # General project settings.
 # More specific settings can be found in the config_file.
 settings = {
+    'PAIN_SCORES': True,
     'VERBOSE': True,
     'VISUALISE': False,
     'PROCESS_ALL_DATA': False,  # set run_all to True to rerun all data
