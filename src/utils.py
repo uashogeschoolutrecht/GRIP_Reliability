@@ -2,6 +2,27 @@ import numpy as np
 import yaml
 from src.utils import *
 import os
+import logging
+from datetime import date
+
+
+def initialise_project():
+    check_or_create_folder('Figures')
+    check_or_create_folder('data')
+    check_or_create_folder('data/one_min')
+    check_or_create_folder('data/raw_data')
+    check_or_create_folder('data/ten_sec')
+    check_or_create_folder('logging')
+    check_or_create_folder('Results')
+    logging.basicConfig(
+        filename=f'logging/warnings_{date.today()}.log', level=logging.WARN)
+
+
+def check_or_create_folder(folder_path):
+    # Check if the folder exists
+    if not os.path.exists(folder_path):
+        # If it does not exist, create the folder
+        os.makedirs(folder_path)
 
 
 def find_nearest(array, value):

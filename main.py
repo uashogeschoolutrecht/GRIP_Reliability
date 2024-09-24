@@ -11,20 +11,13 @@ Main script for the GRIP HAP project.
 
 
 '''
-
 import logging
-from datetime import date
 import pandas as pd
 from src.utils import *
 from src.characteristics import characteristics, characteristics_pain
 from src.prepare_data import prepare_data, split_data, clean_data
 from src.predict_data import predict_data
 import os
-from datetime import datetime, timedelta
-
-
-logging.basicConfig(
-    filename=f'logging/warnings_{date.today()}.log', level=logging.WARN)
 
 # General project settings.
 # More specific settings can be found in the config_file.
@@ -42,6 +35,9 @@ settings = {
 
 
 def main():
+    # Create folders and logging
+    initialise_project()
+
     # Load config file and settings
     config = load_config(settings, config_name="config_file.yaml")
     subjects = os.listdir(settings['RAW_DATA_DIR'])
