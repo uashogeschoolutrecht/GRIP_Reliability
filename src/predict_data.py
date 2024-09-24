@@ -61,14 +61,15 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
     most_common_per_chunk_df.to_csv(f'data/one_min/{file_name}_1min.csv')
 
     # visualise activities per 10 seconds
-    if settings['VISUALISE']:
-        x_axis = (np.arange(len(predicted_values)) * 10) / 60 / 60
-        fig, ax = plt.subplots()
-        ax.plot(x_axis, predicted_values)
-        ax.set_title(f'Activities for file: '
-                     f'{file} per 10 seconds')
-        ax.set_ylabel('Activity')
-        ax.set_xlabel('Time [hours]')
+    # if settings['VISUALISE']:
+    #     x_axis = (np.arange(len(predicted_values)) * 10) / 60 / 60
+    #     fig, ax = plt.subplots()
+    #     ax.plot(x_axis, predicted_values)
+    #     ax.set_title(f'Activities for file: '
+    #                  f'{file} per 10 seconds')
+    #     ax.set_ylabel('Activity')
+    #     ax.set_xlabel('Time [hours]')
+    #     fig.savefig(f'Figures/{file}_10sec.png')
 
     # visualise activities per chunk size
     if settings['VISUALISE']:
@@ -78,5 +79,6 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
         ax.set_title(f'Activities for file: {file}')
         ax.set_ylabel('Activity')
         ax.set_xlabel('Time [hours]')
+        fig.savefig(f'Figures/{file_name}_1min.png')
 
     return most_common_per_chunk_df

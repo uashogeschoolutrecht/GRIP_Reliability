@@ -25,8 +25,7 @@ settings = {
     'PAIN_SCORES': True,
     'RESULTS_2HOURS': True,
     'VERBOSE': True,
-    'VISUALISE': False,
-    'PROCESS_ALL_DATA': False,  # set run_all to True to rerun all data
+    'VISUALISE': True,
     'RAW_DATA_DIR': 'data/raw_data',
     'CONFIG_DIR': 'config'
 }
@@ -47,6 +46,8 @@ def main():
 
     # Loop over subjecs
     for subject in subjects:
+        if settings['VERBOSE']:
+            print(f'Analysing subject {subject}')
         try:
             if subject.endswith('.DS_Store'):
                 continue
@@ -64,6 +65,8 @@ def main():
                 if day.endswith('.csv'):
                     continue
                 try:
+                    if settings['VERBOSE']:
+                        print(f'Analysing day {day}')
                     results = {}
                     file_path = os.listdir(
                         f"{settings['RAW_DATA_DIR']}/{subject}/{day}")[0]
@@ -148,7 +151,7 @@ def main():
                     logging.error(f'day: {subject} {day} {e}')
         except Exception as e:
             logging.error(f'subject: {subject} {day} {e}')
-
+        break
     final_results.to_excel('Results/results_per_day.xlsx', index=False)
     final_results.loc[:, 'average_activity_level':].corr().to_excel(
         'Results/correlations_per_day.xlsx')
