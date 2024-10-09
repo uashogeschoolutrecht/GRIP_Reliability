@@ -3,7 +3,7 @@
 import pandas as pd
 import pingouin as pg
 
-data = pd.read_excel('Results/test.xlsx')
+data = pd.read_excel('Results/results_per_day.xlsx')
 data = data.dropna(axis=1)
 data = data.sort_values(by=['day'])
 subject_counts = data['subject'].value_counts()
@@ -33,7 +33,7 @@ for i in range(1, 8):
     # Concatenate the mean values of the first and second groups
     final_mean_df = pd.concat(
         [mean_values_first, mean_values_second]).reset_index()
-
+    print(len(final_mean_df))
     for variable in subjects_data.columns:
         try:
             icc = pg.intraclass_corr(data=final_mean_df, targets='subject', raters='group_label',

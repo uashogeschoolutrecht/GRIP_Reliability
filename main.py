@@ -1,8 +1,10 @@
 
 # %%
 '''
+Created by Richard Felius
+
 Main script for the GRIP HAP project.
-- Run thisthe script to process raw data
+- Run this script to process raw data
 - Get activity scores for every 10 seconds / minute
 - creates an excel with outcomes per person per measurement (day)
 
@@ -25,7 +27,7 @@ settings = {
     'PAIN_SCORES': True,
     'RESULTS_2HOURS': True,
     'VERBOSE': True,
-    'VISUALISE': True,
+    'VISUALISE': False,
     'RAW_DATA_DIR': 'data/raw_data',
     'CONFIG_DIR': 'config'
 }
@@ -152,10 +154,14 @@ def main():
         except Exception as e:
             logging.error(f'subject: {subject} {day} {e}')
 
+    # Replace empty values with 0
+    final_results = final_results.fillna(0)
     final_results.to_excel('Results/results_per_day.xlsx', index=False)
     final_results.loc[:, 'average_activity_level':].corr().to_excel(
         'Results/correlations_per_day.xlsx')
     if settings['RESULTS_2HOURS']:
+        # Replace empty values with 0
+        final_results_2hours = final_results_2hours.fillna(0)
         final_results_2hours.to_excel(
             'Results/results_per_2hours.xlsx', index=False)
 

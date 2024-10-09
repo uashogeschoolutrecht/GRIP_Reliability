@@ -138,6 +138,11 @@ def characteristics_pain(painscores, results, day, time=None):
     painscores['Standardized Date'] = painscores['Date'].dt.strftime(
         '%Y-%m-%d')
     painscore = painscores.loc[painscores['Standardized Date'] == day]
+    if painscore.empty:
+        painscores['Standardized Date'] = painscores['Date'].dt.strftime(
+            '%Y-%d-%m')
+        painscore = painscores.loc[painscores['Standardized Date'] == day]
+
     if time:
         results['pijn_score'] = painscore[time].values[0]
         results['tijd'] = time
