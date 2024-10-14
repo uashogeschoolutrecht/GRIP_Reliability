@@ -26,6 +26,7 @@ import os
 settings = {
     'PAIN_SCORES': True,
     'RESULTS_2HOURS': True,
+    'Annet' : False,
     'VERBOSE': True,
     'VISUALISE': False,
     'RAW_DATA_DIR': 'data/raw_data',
@@ -48,22 +49,24 @@ def main():
 
     # Loop over subjecs
     for subject in subjects:
+        if subject.endswith('.DS_Store'):
+            continue
         if settings['VERBOSE']:
             print(f'Analysing subject {subject}')
         try:
-            if subject.endswith('.DS_Store'):
-                continue
-
             if settings['PAIN_SCORES']:
                 # Load painscores
                 painscores = pd.read_csv(
-                    f'data/raw_data/{subject}/pain_score/{subject}_pain_score.csv', index_col=0)
+                    f"settings['RAW_DATA_DIR']/{subject}/pain_score/{subject}_pain_score.csv", index_col=0)
 
             days = os.listdir(f"{settings['RAW_DATA_DIR']}/{subject}")
-            days.remove('pain_score')
+            if settings['PAIN_SCORES']:
+                days.remove('pain_score')
 
             # Loop over days
             for day in days:
+                if day.endswith('.DS_Store'):
+                    continue
                 if day.endswith('.csv'):
                     continue
                 try:
@@ -78,9 +81,11 @@ def main():
                     # Load data, downsample and remove not worn
                     data_df, endtime, begintime = prepare_data(
                         file, config, settings)
-
-                    data_df = split_data(
-                        data_df, begintime, endtime, config)
+                    
+                    
+                    if not settings['Annet']:
+                        data_df = split_data(
+                            data_df, begintime, endtime, config)
 
                     # Drop first and last 30 seconds and drop not worn
                     data_df, not_worn_samples = clean_data(

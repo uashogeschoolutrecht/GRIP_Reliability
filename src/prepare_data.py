@@ -116,10 +116,13 @@ def prepare_data(file, config, settings):
                np.std(sample['acc_y']) + np.std(sample['acc_z'])) / 3
         if std < 10 ** (-3):
             data_df.loc[start:end, 'Worn_sensor'] = 0
-
-    enddate = file.split('_')[-2]
-    endhour = file.split('_')[-1].split('.')[0]
-    endtime = datetime.strptime(f'{enddate} {endhour}', '%Y-%m-%d %H%M%S')
-    measurement_duration_seconds = int(len(data_df)/config['frequency'])
-    begintime = endtime - timedelta(seconds=measurement_duration_seconds)
+    if not settings['Annet']:
+        enddate = file.split('_')[-2]
+        endhour = file.split('_')[-1].split('.')[0]
+        endtime = datetime.strptime(f'{enddate} {endhour}', '%Y-%m-%d %H%M%S')
+        measurement_duration_seconds = int(len(data_df)/config['frequency'])
+        begintime = endtime - timedelta(seconds=measurement_duration_seconds)
+    else:
+        endtime = 0
+        begintime = 0
     return data_df, endtime, begintime
