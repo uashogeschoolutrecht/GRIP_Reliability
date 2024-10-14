@@ -10,6 +10,9 @@ subject_counts = data['subject'].value_counts()
 results = {}
 final_df = pd.DataFrame()
 
+# Minimum duration of 10 hours
+data = data.loc[data['Epochs_of_1minute'] >= 600]
+
 for i in range(1, 8):
     subjects = subject_counts.loc[subject_counts >= i * 2].index
     subjects_data = data.loc[data['subject'].isin(subjects)]
@@ -33,7 +36,7 @@ for i in range(1, 8):
     # Concatenate the mean values of the first and second groups
     final_mean_df = pd.concat(
         [mean_values_first, mean_values_second]).reset_index()
-    print(len(final_mean_df))
+    print(f'Aantal dagen: {i}, aantal proefpersonen {len(final_mean_df) / 2}')
     for variable in subjects_data.columns:
         try:
             icc = pg.intraclass_corr(data=final_mean_df, targets='subject', raters='group_label',

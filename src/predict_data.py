@@ -5,7 +5,7 @@ import numpy as np
 from src.utils import *
 import tensorflow as tf
 import matplotlib.pyplot as plt
-
+import seaborn as sns
 
 def mean_value(chunk):
     return np.round(np.mean(chunk) + 0.01)
@@ -73,12 +73,45 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
 
     # visualise activities per chunk size
     if settings['VISUALISE']:
-        x_axis = np.arange(len(most_common_per_chunk)) / 60
-        fig, ax = plt.subplots()
-        ax.plot(x_axis, most_common_per_chunk)
+        # Generate x_axis based on the number of chunks
+        x_axis = np.arange(len(most_common_per_chunk))
+
+        # Create a custom Seaborn color palette from purple to light yellow
+        colors = sns.color_palette("magma", len(np.unique(most_common_per_chunk)))  # Magma palette, ranging from purple to yellow
+        unique_categories = np.unique(most_common_per_chunk)
+
+        # Map each unique category to a color
+        color_map = {category: colors[i] for i, category in enumerate(unique_categories)}
+        # Create the plot
+        fig, ax = plt.subplots(figsize=(10, 5))
+
+        # Plot vertical lines for each chunk, filling the vertical space
+        for i, category in enumerate(most_common_per_chunk):
+            ax.vlines(x_axis[i], ymin=0, ymax=1, color=color_map[category], linewidth=5)
+
+        # Set axis labels and title
         ax.set_title(f'Activities for file: {file}')
         ax.set_ylabel('Activity')
-        ax.set_xlabel('Time [hours]')
+        ax.set_xlabel('Time [minutes]')
+        ax.set_yticks([])  # Remove y-axis ticks since this is categorical data
+
+        # Remove the spines (border lines around the plot)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
+        ax.spines['bottom'].set_visible(False)
+        ax.spines['left'].set_visible(False)
+
+        # Create a legend with the unique categories and corresponding custom labels
+        category_labels = ['Sedentair', 'Licht intensief', 'Gemiddeld intensief', 'Hoog intensief']
+        legend_elements = [plt.Line2D([0], [0], color=color_map[category], lw=4, label=category_labels[i]) for i, category in enumerate(unique_categories)]
+
+        # Add the legend to the plot
+        ax.legend(handles=legend_elements, title='Categoriën', loc='upper right')
+
+        # Display the plot
+        plt.show()
+
+        # Save the figure to a file
         fig.savefig(f'Figures/{file_name}_1min.png')
 
     return most_common_per_chunk_df
