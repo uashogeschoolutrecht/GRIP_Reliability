@@ -26,6 +26,16 @@ def characteristics(results, data):
     indx_changes = np.where(differences != 0)[0] + 1
     results['per_change'] = len(indx_changes) / len(data) * 100
 
+    for i in range(4):
+        for j in range(4):
+            if i != j:
+                results[f'transitions_{i}_{j}'] = 0
+
+            
+    for num, value in enumerate(data[:-1]):
+        if data[num] - data[num-1] != 0:
+            results[f'transitions_{int(data[num])}_{int(data[num-1])}'] += 1
+
     # per epoch (can be longer than ML-output length)
     if indx_changes.size == 0:
         epochs = [data]
@@ -78,10 +88,18 @@ def characteristics(results, data):
         results[f'epochs_{activity}_max_length'] = np.max(bout_lengths)
 
     # Complexity features
-    results[f'Sample_entropy'] = EH.SampEn(data, m=2)[0][-1]
+    results[f'Sample_entropy_m2_tau1'] = EH.SampEn(data, m=2, tau=1)[0][-1]
+    results[f'Sample_entropy_m3_tau1'] = EH.SampEn(data, m=3, tau=1)[0][-1]
+    results[f'Sample_entropy_m4_tau1'] = EH.SampEn(data, m=4, tau=1)[0][-1]
+    results[f'Sample_entropy_m2_tau2'] = EH.SampEn(data, m=2, tau=2)[0][-1]
+    results[f'Sample_entropy_m3_tau2'] = EH.SampEn(data, m=3, tau=2)[0][-1]
+    results[f'Sample_entropy_m4_tau2'] = EH.SampEn(data, m=4, tau=2)[0][-1]
     p_vector = probability(np.array(data)+1)
     results[f'info_entropy'] = entropy(p_vector)
-    results[f'PLZC'], _ = complexity_lempelziv(data, permutation=True)
+    results[f'PLZC_dalay1_dim2'], _ = complexity_lempelziv(data, permutation=True, delay=1,dimension=2,)
+    results[f'PLZC_dealy2_dim2'], _ = complexity_lempelziv(data, permutation=True, delay=1,dimension=2,)
+    results[f'PLZC_dealy2_dim3'], _ = complexity_lempelziv(data, permutation=True, delay=1,dimension=2,)
+    results[f'PLZC_dealy3_dim3'], _ = complexity_lempelziv(data, permutation=True, delay=1,dimension=2,)
     return results
 
 
