@@ -26,16 +26,7 @@ def characteristics(results, data):
     indx_changes = np.where(differences != 0)[0] + 1
     results['per_change'] = len(indx_changes) / len(data) * 100
 
-    for i in range(4):
-        for j in range(4):
-            if i != j:
-                results[f'transitions_{i}_{j}'] = 0
-
-            
-    for num, value in enumerate(data[:-1]):
-        if data[num] - data[num-1] != 0:
-            results[f'transitions_{int(data[num])}_{int(data[num-1])}'] += 1
-
+    results = transitions(data, results)
     # per epoch (can be longer than ML-output length)
     if indx_changes.size == 0:
         epochs = [data]
@@ -97,13 +88,30 @@ def characteristics(results, data):
     p_vector = probability(np.array(data)+1)
     results[f'info_entropy'] = entropy(p_vector)
     results[f'PLZC_dalay1_dim2'], _ = complexity_lempelziv(data, permutation=True, delay=1,dimension=2,)
-    results[f'PLZC_dealy2_dim2'], _ = complexity_lempelziv(data, permutation=True, delay=1,dimension=2,)
-    results[f'PLZC_dealy2_dim3'], _ = complexity_lempelziv(data, permutation=True, delay=1,dimension=2,)
-    results[f'PLZC_dealy3_dim3'], _ = complexity_lempelziv(data, permutation=True, delay=1,dimension=2,)
+    results[f'PLZC_dealy2_dim2'], _ = complexity_lempelziv(data, permutation=True, delay=2,dimension=2,)
+    results[f'PLZC_dealy2_dim3'], _ = complexity_lempelziv(data, permutation=True, delay=2,dimension=3,)
+    results[f'PLZC_dealy3_dim3'], _ = complexity_lempelziv(data, permutation=True, delay=3,dimension=3,)
     return results
 
+def transitions(data, results):
+    # Calculates the time normalised transitions from sedentairy to light etc.
+    for i in range(4):
+        for j in range(4):
+            if i != j:
+                results[f'norm_transitions_{i}_{j}'] = 0
+
+    for num, _ in enumerate(data[:-1]):
+        if data[num] - data[num-1] != 0:
+            results[f'norm_transitions_{int(data[num])}_{int(data[num-1])}'] += 1
+
+    for i in range(4):
+        for j in range(4):
+            if i != j:
+                results[f'norm_transitions_{i}_{j}'] /= len(data)
+    return results
 
 def alfa_sigma_gini(bout_lengths, activity):
+    # Calculates the alfa, sigma and gini index
     outcomes = {}
     if len(Counter(bout_lengths)) <= 1:
         outcomes[f'weight_median_{activity}'] = np.nan
@@ -151,6 +159,7 @@ def alfa_sigma_gini(bout_lengths, activity):
 
 
 def characteristics_pain(painscores, results, day, time=None):
+    # Calculates the pain score characetristices per period
     painscores['Date'] = pd.to_datetime(
         painscores['Date'], format='mixed', dayfirst=True, errors='coerce')
     painscores['Standardized Date'] = painscores['Date'].dt.strftime(

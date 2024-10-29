@@ -11,10 +11,12 @@ results = {}
 final_df = pd.DataFrame()
 
 # Minimum duration of 10 hours
-data = data.loc[data['Epochs_of_1minute'] >= 600]
+data = data.loc[data['Epochs_of_1minute'] >= 660]
+data = data.loc[data['Epochs_of_1minute'] <= 1200]
 
 for i in range(1, 8):
     subjects = subject_counts.loc[subject_counts >= i * 2].index
+
     subjects_data = data.loc[data['subject'].isin(subjects)]
 
     # Get the first 'i' rows for each subject
@@ -51,6 +53,6 @@ for i in range(1, 8):
         final_df = results_df
     else:
         final_df = pd.concat((final_df, results_df), axis=1)
-final_df.to_excel('Results/ICC_waardes.xlsx')
+final_df.to_excel('Results/ICC_waardes_>660min_<1200min.xlsx')
 
 # %%

@@ -36,7 +36,7 @@ settings = {
 
 
 def main():
-    # Create folders and logging
+    # Create folders and logging    
     initialise_project()
 
     # Load config file and settings
@@ -127,15 +127,18 @@ def main():
                             results['subject'] = subject
                             results['day'] = day
                             results['Samples'] = len(tmp_data)
-                            results['not_worn_samples'] = not_worn_samples
+                            # results['not_worn_samples'] = not_worn_samples
                             results['Name'] = file
                             results['begintime'] = begintime
                             results['endtime'] = endtime
                             results['key'] = key
                             if settings['PAIN_SCORES']:
                                 try:
+                                    # Use the following code to get the pain score at the start
+                                    # results = characteristics_pain(
+                                    #     painscores, results, day, time=f'{key.split('_')[0]}:00')
                                     results = characteristics_pain(
-                                        painscores, results, day, time=f'{key.split('_')[0]}:00')
+                                        painscores, results, day, time=f'{key.split('_')[1]}:00')
                                 except Exception as e:
                                     logging.error(f'pain: {subject} {day} {e}')
 
@@ -164,7 +167,10 @@ def main():
         final_results_2hours = final_results_2hours.fillna(0)
         final_results_2hours.to_excel(
             'Results/results_per_2hours.xlsx', index=False)
-
+        # final_results_2hours = pd.read_excel('Results/results_per_2hours.xlsx')
+        final_results_2hours = final_results_2hours.drop(columns = ['tijd',	'Epochs_of_1minute'])
+        final_results_2hours.loc[:, 'pijn_score':].corr().to_excel(
+            'Results/correlations_per_2hours.xlsx')
 
 if __name__ == '__main__':
     main()

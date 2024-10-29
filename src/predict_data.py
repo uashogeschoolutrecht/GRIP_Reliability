@@ -10,7 +10,6 @@ import seaborn as sns
 def mean_value(chunk):
     return np.round(np.mean(chunk) + 0.01)
 
-
 def predict_data(data_df, config, settings, file_name, file, chunk_size):
     data_df = data_df.reset_index()
     data_df['group'] = np.nan
@@ -59,17 +58,6 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
                                                               left_index=True,  # Merge on the index of most_common_per_chunk
                                                               right_index=True)
     most_common_per_chunk_df.to_csv(f'data/one_min/{file_name}_1min.csv')
-
-    # visualise activities per 10 seconds
-    # if settings['VISUALISE']:
-    #     x_axis = (np.arange(len(predicted_values)) * 10) / 60 / 60
-    #     fig, ax = plt.subplots()
-    #     ax.plot(x_axis, predicted_values)
-    #     ax.set_title(f'Activities for file: '
-    #                  f'{file} per 10 seconds')
-    #     ax.set_ylabel('Activity')
-    #     ax.set_xlabel('Time [hours]')
-    #     fig.savefig(f'Figures/{file}_10sec.png')
 
     # visualise activities per chunk size
     if settings['VISUALISE']:
