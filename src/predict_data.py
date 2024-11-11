@@ -41,7 +41,7 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
     predicted_values = np.argmax(predicted_values, axis=1)
     predicted_values_df = pd.DataFrame(
         predicted_values, columns=['activities [10 sec]'])
-    predicted_values_df = predicted_values_df.merge(data_df.drop_duplicates(subset='group')[['time_2hours', 'group']],
+    predicted_values_df = predicted_values_df.merge(data_df.drop_duplicates(subset='group')[['time_2hours', 'group','time']],
                                                     left_index=True,  # Use index from predicted_values_df
                                                     right_on='group').reset_index(drop=True)
     predicted_values_df.to_csv(f'data/ten_sec/{file_name}_10sec.csv')
@@ -54,32 +54,9 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
     most_common_per_chunk = [mean_value(chunk) for chunk in chunks[:-1]]
     most_common_per_chunk_df = pd.DataFrame(
         most_common_per_chunk, columns=['activities [1min]'])
-    most_common_per_chunk_df = most_common_per_chunk_df.merge(predicted_values_df[::6].reset_index()['time_2hours'],
+    most_common_per_chunk_df = most_common_per_chunk_df.merge(predicted_values_df[::6].reset_index()[['time_2hours','time']],
                                                               left_index=True,  # Merge on the index of most_common_per_chunk
                                                               right_index=True)
     most_common_per_chunk_df.to_csv(f'data/one_min/{file_name}_1min.csv')
-
-    # visualise activities per chunk size
-    if settings['VISUALISE']:
-        x_axis = np.arange(len(most_common_per_chunk))
-        colors = ['#270452', '#A82C2C', '#D49057', '#F1EDA6']
-        unique_categories = np.unique(most_common_per_chunk)
-        color_map = {category: colors[i] for i, category in enumerate(unique_categories)}
-        fig, ax = plt.subplots(figsize=(10, 5))
-        for i, category in enumerate(most_common_per_chunk):
-            ax.vlines(x_axis[i], ymin=0, ymax=1, color=color_map[category], linewidth=5)
-        ax.set_title(f'Activities for file: {file}')
-        ax.set_ylabel('Activity')
-        ax.set_xlabel('Time [minutes]')
-        ax.set_yticks([])  # Remove y-axis ticks since this is categorical data
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        category_labels = ['Sedentair', 'Licht intensief', 'Gemiddeld intensief', 'Hoog intensief']
-        legend_elements = [plt.Line2D([0], [0], color=color_map[category], lw=4, label=category_labels[i]) for i, category in enumerate(unique_categories)]
-        ax.legend(handles=legend_elements, title='Categoriën', loc='upper right')
-        plt.show()
-        fig.savefig(f'Figures/{file_name}_1min.png')
 
     return most_common_per_chunk_df

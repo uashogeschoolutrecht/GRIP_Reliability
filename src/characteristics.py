@@ -107,7 +107,7 @@ def transitions(data, results):
     for i in range(4):
         for j in range(4):
             if i != j:
-                results[f'norm_transitions_{i}_{j}'] /= len(data)
+                results[f'norm_transitions_{i}_{j}'] /= (len(data) / 100)
     return results
 
 def alfa_sigma_gini(bout_lengths, activity):

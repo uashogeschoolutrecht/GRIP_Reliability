@@ -2,6 +2,7 @@
 #
 import pandas as pd
 import pingouin as pg
+import numpy as np
 
 data = pd.read_excel('Results/results_per_day.xlsx')
 data = data.dropna(axis=1)
@@ -11,7 +12,7 @@ results = {}
 final_df = pd.DataFrame()
 
 # Minimum duration of 10 hours
-data = data.loc[data['Epochs_of_1minute'] >= 660]
+data = data.loc[data['Epochs_of_1minute'] >= 600]
 data = data.loc[data['Epochs_of_1minute'] <= 1200]
 
 for i in range(1, 8):
@@ -38,12 +39,16 @@ for i in range(1, 8):
     # Concatenate the mean values of the first and second groups
     final_mean_df = pd.concat(
         [mean_values_first, mean_values_second]).reset_index()
-    print(f'Aantal dagen: {i}, aantal proefpersonen {len(final_mean_df) / 2}')
+    print(f' \n Aantal dagen: {i}, aantal proefpersonen {len(final_mean_df) / 2} \n')
     for variable in subjects_data.columns:
         try:
             icc = pg.intraclass_corr(data=final_mean_df, targets='subject', raters='group_label',
                                      ratings=variable).round(3)
             icc2 = icc.loc[icc['Type'] == 'ICC2']
+            CI = icc['CI95%'].loc[1]
+            SEM = (np.std(subjects_data[variable]) * np.sqrt(1 - icc2['ICC'].values[0]))
+            MDC = (1.96 * SEM * np.sqrt(2))
+            print(f'{variable} MDC: {MDC}')
             results[f'ICC_{variable}'] = icc2['ICC'].values[0]
             # results[f'CI_days_{i}_var_{variable}'] = icc2['CI95%'].values[0]
         except:

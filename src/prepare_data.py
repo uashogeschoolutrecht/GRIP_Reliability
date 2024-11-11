@@ -64,6 +64,7 @@ def split_data(data_df, begintime, endtime, config):
             (end - begintime).seconds * config['frequency'])
         data_df.loc[sample_start:sample_end, 'time_2hours'] = f'{
             start.hour}_{end.hour}'
+    data_df['time'] = [begintime + timedelta(seconds=i /config['frequency']) for i in range(len(data_df))]
     return data_df
 
 
@@ -75,8 +76,7 @@ def clean_data(data_df, config, all=False):
             data_df)-samples_per_halfmin, :]
 
     # Drop data that has more than a minute of inactivity
-    not_worn_samples = len(
-        data_df.loc[data_df['Worn_sensor'] == 0])
+    not_worn_samples = data_df.loc[data_df['Worn_sensor'] == 0]
     data_df = data_df.loc[data_df['Worn_sensor'] == 1]
     return data_df, not_worn_samples
 

@@ -19,7 +19,9 @@ from src.utils import *
 from src.characteristics import characteristics, characteristics_pain
 from src.prepare_data import prepare_data, split_data, clean_data
 from src.predict_data import predict_data
+from src.barcode_plot import barcodeplot
 import os
+import matplotlib.pyplot as plt
 
 # General project settings.
 # More specific settings can be found in the config_file.
@@ -81,19 +83,23 @@ def main():
 
                     data_df = split_data(
                         data_df, begintime, endtime, config)
-
+                    
                     # Drop first and last 30 seconds and drop not worn
                     data_df, not_worn_samples = clean_data(
                         data_df, config, all=True)
-
+                    
                     # Predict data based on a previously trained ML algorithm
                     data = predict_data(data_df, config, settings,
                                         file_name, file, config['chunk_size'])
-
+                    
+                    # visualise activities per chunk size
+                    if settings['VISUALISE']:
+                        barcodeplot(data, file, file_name)
+                        
                     results['subject'] = subject
                     results['day'] = day
-                    results['Samples'] = len(data_df) + not_worn_samples
-                    results['not_worn_samples'] = not_worn_samples
+                    results['Samples'] = len(data_df) + len(not_worn_samples)
+                    results['not_worn_samples'] = len(not_worn_samples)
                     results['Name'] = file
                     results['begintime'] = begintime
                     results['endtime'] = endtime
