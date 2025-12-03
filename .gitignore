@@ -177,3 +177,7 @@ Figures/CP1001.png
 /archive 
 /models/tuner
 *.out
+/Logging
+/documentation
+/Figures
+/Data

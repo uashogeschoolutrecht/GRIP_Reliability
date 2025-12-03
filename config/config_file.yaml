@@ -1,3 +1,0 @@
-frequency: 12.5 # Hz
-sample_size: 10 # Time in seconds  -> 12 seconds?
-chunk_size: 6 # Number of 10 seconds epochs per bout

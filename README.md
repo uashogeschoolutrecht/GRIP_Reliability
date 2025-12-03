@@ -1,124 +1,147 @@
 # GRIP_Human_Activity_Patterns
+Machine-learning pipelines to classify activity intensities in people with Chronic Pain
 
-The GRIP (beweeGsensoren voor mensen met chRonIsche Pijn) project, aims to use movement sensors (accelerometers) in order to model the complex activity patterns of people with Chronic Pain (CP).
-Several challenges arise in this project, for example lack of enough labeled data that allows for a Machine Learning (ML) algorithm to properly learn about the activity patterns of people with CP.
+---
 
-The Data Science Pool (DSP) team collaborates with researchers from the [Lifestyle and Health](https://www.internationalhu.com/research/lifestyle-and-health) Department at the University of Applied Sciences in this effort.
+## 📖 Overview
 
-In this repo we keep a centralized Sandbox, where we experiment with open source datasets in order to gather further understanding about the technicalities of working with sensor data, in our case accelerometers.
+The **GRIP project** (beweeGsensoren voor mensen met chRonIsche Pijn) aims to develop robust machine-learning models that classify **real-world activity intensities** using wrist-worn accelerometers in people with Chronic Pain (CP).
 
-Many parts of the code are simple jupyter notebooks where we perform the experiments; we use openly available datasets and code for our tests.
+Because activity behaviour in CP differs from healthy individuals, and because labeled data is limited, this repository provides a complete, reproducible pipeline for:
 
-## Overview
+- Processing **lab-based** annotated accelerometer data  
+- Processing **real-world capture** data with researcher-annotated activity logs  
+- Training and evaluating multiple machine-learning models  
+- Comparing CP vs. healthy patterns  
+- Training a **final production-ready model** using all available data  
+- Validating the model on **criterion validity** real-world data  
 
-The project is designed to take raw accelerometer data, preprocess it, classify it into physical activity categories, and then calculate various physical activity features. The workflow includes:
+This repository contains all scripts necessary to reproduce the results for the referenced publication.
 
-- **Data Preprocessing**: Raw data cleaning and synchronization.
-- **Activity Classification**: Classification into different physical intesitities: sedentairy, light, medium and high intensity.
-- **Feature Calculation**: Daily features based on the classification bouts.
+---
 
-## Usage
+## 📝 How to Cite
 
-Create data folder and add subfolders
+If you use this software, please cite:
 
-- Set the sample frequency and sample size in the config file.
-- Add data to the raw_data folder -> data/raw_data/subject/days/sensorfile.csv
+**Annet Doomen, Richard A. W. Felius**  
+*An open-source deep learning model to classify real-world activity intensities in persons with chronic pain using a wrist-worn accelerometer.*
 
-Create virtual env
+---
 
-- python -m venv venv
-- pip install -r requirements.txt
+## 📂 Data Sources
 
-run files
+### **1. Lab-based annotated data**
+Participants (both healthy and CP) performed a series of structured activities at varying movement intensities.  
+Researchers labeled each activity segment so accelerometer data could be aligned with the correct activity intensity.
 
-- Check settings in main.py
-- Run main.py
+### **2. Real-world “capture” data**
+Participants wore an accelerometer for **four hours** during daily life while a researcher continuously annotated their activities.  
+These labels were manually converted into **MET-scores**, which served as criterion validity outcomes.
 
-## Features
+### **3. Criterion validity dataset**
+Used to evaluate how well the final model generalizes to unconstrained real-world behaviour.
 
-- **Sensor Data Processing**: Process raw accelerometer data to extract movement patterns.
-- **Activity Classification**: Classify physical activities into predefined categories using machine learning or rule-based models.
-- **Daily Activity Features**: Calculate total time in each physical activity category and complexity of movement patterns during the day.
-- **Customizable Pipelines**: Easy to modify or add additional feature extraction or classification methods.
 
-## Data Requirements
 
-- **Input**: The input should be raw accelerometer data in the following format:
+## 🧠 Pipeline Summary
 
-  - **Sensor settings**: Settings in the first 8 lines
-  - **Timestamp**:
-  - **X, Y, Z acceleration**: Raw acceleration data in 3 axes.
-  - **Timestamp True time**: Timestamp true time in miliseconds (before and after sensor data)
+### **Data Processing**
 
-  Example:
+The pipeline:
 
-  ```csv
-  serial,HW Version,FW Version,SW Version
-  2201001028,2,v1.17-278-g7566d107d on 2021-12-22,0xc870bf3
-  settings,frequency,scale,decimation
-  FIFO,12.5
-  Accelerometer,12.5,4,1
-  Gyroscope,0,500,1
-  timestamp,high res,True,1
-  Timestamp,Accelerometer,,,Gyroscope,RTC timestamp
-  ,X,Y,Z,X,Y,Z,
-  ,,,,,,,492985011
-  1046,-0.2926,-0.2148,0.9441999,,,,
-  1800,-0.2779,-0.2329,0.9501,,,,
-  2554,-0.2594,-0.2248,0.9632,,,,
-  3308,-0.2804,-0.2386,0.9899,,,,
-  4062,-0.2712,-0.2522,0.9734,,,,
-  ```
+- Loads raw accelerometer data  
+- Aligns movement segments with annotation labels  
+- Applies preprocessing & filtering  
+- Windows the data  
+- Extracts features or prepares raw signal windows  
+- Exports standardized datasets for training/testing  
+---
 
-# Project Structure
+### **Model Evaluation (evaluate_models.py)**
 
-This repository contains the following directories and files:
+This script:
 
-## Directories
+- Trains multiple ML architectures  
+- Evaluates accuracy, F1, precision, recall  
+- Generates confusion matrices  
+- Selects the best-performing model  
 
-- **config/**  
-  Contains configuration files (e.g., `.json`, `.yaml`, or `.ini`) to manage project settings and parameters.
 
-- **data/**  
-  Directory for storing raw or processed data used in the project.
+---
 
-- **Figures/**  
-  Used to store plots, charts, or visualizations generated during the analysis.
+### **Final Model (definitive_model.py)**
 
-- **logging/**  
-  Holds logging-related configurations or log files that track the execution of the project.
+The selected model is retrained and evaluated separately for:
 
-- **models/**  
-  Stores machine learning models, including pre-trained models or model outputs.
+- Lab CP  
+- Lab healthy  
+- Real-world CP  
+- Real-world healthy  
 
-- **Results/**  
-  Contains outputs of the project, such as analysis results, processed data, or final reports.
+Multiple repetitions are used to assess generalization stability.
 
-- **src/**  
-  Source code directory where the main project scripts are implemented.
+---
 
-- **venv/**  
-  Virtual environment folder containing the Python packages and dependencies for the project, ensuring an isolated environment.
+### **Production Model (production_model.py)**
 
-## Files
+A final model is trained using **all available data** and then evaluated on the **criterion validity** dataset.  
+This assesses real-world performance under deployment-like conditions.
 
-- **.gitignore**  
-  Specifies files and directories that should be ignored by Git (e.g., environment files, temporary data).
+**TODO:** Add final hyperparameters and architecture summary.
 
-- **10sec.png** & **test.png**  
-  Image files, possibly used for example visualizations or testing purposes.
+---
 
-- **LICENSE**  
-  The license file that defines the legal terms under which the project can be used or distributed.
+## 📊 Outputs
 
-- **main.py**  
-  The main script for running the project. This file likely initiates the data processing pipeline, including sensor data preprocessing, activity classification, and feature extraction.
+The repository generates:
 
-- **README.md**  
-  Project documentation, providing an overview of the project, how to install and use it, and any necessary details about its structure.
+- Confusion matrices  
+- Performance tables  
+- Model comparison figures  
+- Group-specific evaluation outcomes  
+- Exported trained models  
 
-- **reliability.py**  
-  Script dedicated to running reliability checks or tests, ensuring robustness and consistency in data processing or model performance.
+---
 
-- **requirements.txt**  
-  A list of Python packages and dependencies required by the project. Use this file to install dependencies with `pip`.
+## ▶️ How to Run
+
+### 1. Install dependencies
+```
+pip install -r requirements.txt
+```
+
+### 2. Process the data
+```
+python data_processing/process_lab_data.py
+python data_processing/process_capture_data.py
+```
+
+### 3. Train and evaluate models
+```
+python model_training/evaluate_models.py
+```
+
+### 4. Train final & production models
+```
+python model_training/definitive_model.py
+python model_training/production_model.py
+```
+
+---
+
+## 📦 Requirements
+
+- Python 3.9+  
+- TensorFlow / Keras  
+- NumPy & Pandas  
+- Scikit-learn  
+- Matplotlib / Seaborn  
+
+---
+
+## 👩‍🔬 Contributors
+
+- **Richard A. W. Felius**  
+
+---

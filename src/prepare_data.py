@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from src.utils import *
+from SRC.utils import *
 from datetime import datetime, timedelta
 
 
@@ -48,7 +48,7 @@ def round_time_to_two_hours(dt, mode):
             return dt.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
-def split_data(data_df, begintime, endtime, config):
+def split_data(data_df, begintime, endtime, settings):
     data_df['time_2hours'] = ''
     corrected_begintime = round_time_to_two_hours(
         begintime, "begin")
@@ -59,19 +59,18 @@ def split_data(data_df, begintime, endtime, config):
         start = corrected_begintime + two_hours * epoch
         end = corrected_begintime + two_hours * epoch + two_hours
         sample_start = int(
-            (start - begintime).seconds * config['frequency'])
+            (start - begintime).seconds * settings['frequency'])
         sample_end = int(
-            (end - begintime).seconds * config['frequency'])
-        data_df.loc[sample_start:sample_end, 'time_2hours'] = f'{
-            start.hour}_{end.hour}'
-    data_df['time'] = [begintime + timedelta(seconds=i /config['frequency']) for i in range(len(data_df))]
+            (end - begintime).seconds * settings['frequency'])
+        data_df.loc[sample_start:sample_end, 'time_2hours'] = f'{start.hour}_{end.hour}'
+    data_df['time'] = [begintime + timedelta(seconds=i /settings['frequency']) for i in range(len(data_df))]
     return data_df
 
 
-def clean_data(data_df, config, all=False):
+def clean_data(data_df, settings, all=False):
     if all:
-        # Drop the first and last 30 seconds
-        samples_per_halfmin = int(config['frequency'] * 30)
+        # Drop the first and last 10 seconds
+        samples_per_halfmin = int(settings['frequency'] * 10)
         data_df = data_df.iloc[samples_per_halfmin:len(
             data_df)-samples_per_halfmin, :]
 
@@ -81,16 +80,18 @@ def clean_data(data_df, config, all=False):
     return data_df, not_worn_samples
 
 
-def prepare_data(file, config, settings):
+def prepare_data(file, group, settings):
+    # Load raw sensor data from file
     data_df = pd.read_csv(
-        f"{settings['RAW_DATA_DIR']}/{file}", header=None, skiprows=10)
+        f"{settings['DATA_DIR']}/raw_data/{group}/{file}", header=None, skiprows=10,on_bad_lines = 'skip' )
     data_df = data_df.drop(data_df.iloc[:, 4:8], axis=1)
     data_df = data_df.iloc[:, 1:]
     data_df.columns = ['acc_x', 'acc_y', 'acc_z']
     data_df = data_df.dropna()
 
+    # Load timestamps to calculate sampling frequency
     timestamps = pd.read_csv(
-        f"{settings['RAW_DATA_DIR']}/{file}", skiprows=8, on_bad_lines='skip')
+        f"{settings['DATA_DIR']}/raw_data/{group}/{file}", skiprows=8, on_bad_lines='skip')
     timestamps = timestamps.dropna(subset='Unnamed: 7')
     start_time = timestamps.iloc[0, -1]
     end_time = timestamps.iloc[-1, -1]
@@ -99,15 +100,16 @@ def prepare_data(file, config, settings):
     diff /= 10000
     sampling_freq = len(data_df) / diff
 
-    if sampling_freq > config['frequency']:
+    # resample data to the settingsured frequency
+    if sampling_freq > settings['frequency']:
         data_df = downsample_to_frequency(
-            data_df, sampling_freq, config['frequency'])
+            data_df, sampling_freq, settings['frequency'])
+
 
     # Detect parts in which the sensor was not worn
     data_df['Worn_sensor'] = 1
-    samples_per_minute = int(config['frequency'] * 60)
+    samples_per_minute = int(settings['frequency'] * 60)
     samples = int(np.floor(len(data_df) / samples_per_minute))
-
     for num in range(samples):
         start = samples_per_minute * num
         end = samples_per_minute * num + samples_per_minute
@@ -120,6 +122,6 @@ def prepare_data(file, config, settings):
     enddate = file.split('_')[-2]
     endhour = file.split('_')[-1].split('.')[0]
     endtime = datetime.strptime(f'{enddate} {endhour}', '%Y-%m-%d %H%M%S')
-    measurement_duration_seconds = int(len(data_df)/config['frequency'])
+    measurement_duration_seconds = int(len(data_df)/settings['frequency'])
     begintime = endtime - timedelta(seconds=measurement_duration_seconds)
     return data_df, endtime, begintime

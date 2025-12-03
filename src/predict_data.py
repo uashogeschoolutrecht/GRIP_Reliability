@@ -1,26 +1,24 @@
 import numpy as np
-from src.utils import *
+from SRC.utils import *
 import pandas as pd
 import numpy as np
-from src.utils import *
 import tensorflow as tf
-import matplotlib.pyplot as plt
-import seaborn as sns
 
 def mean_value(chunk):
     return np.round(np.mean(chunk) + 0.01)
 
-def predict_data(data_df, config, settings, file_name, file, chunk_size):
+def predict_data(data_df, settings, file_name, model):
     data_df = data_df.reset_index()
     data_df['group'] = np.nan
-    samples_per_tensec = int(config['sample_size'] * config['frequency'])
+    samples_per_tensec = int(settings['sample_size'] * settings['frequency'])
     samples = int(np.floor(len(data_df) / samples_per_tensec))
+    
     for num in range(samples):
         start = samples_per_tensec * num
         end = samples_per_tensec * num + samples_per_tensec - 1
         data_df.loc[start:end, 'group'] = int(num)
     data_df = data_df.dropna()
-
+        
     # Drop values that are
     data_input_array = {part: group[['acc_x', 'acc_y', 'acc_z']]
                         for part, group in data_df.groupby('group')}
@@ -33,11 +31,12 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
         counter += 1
 
     # Load model
-    model = tf.keras.models.load_model('models/CNN_model.keras')
+    model = tf.keras.models.load_model(f'{settings["MODELS_DIR"]}/{model}')
 
     # predict values
     # Drop
     predicted_values = model.predict(data_np)
+    
     predicted_values = np.argmax(predicted_values, axis=1)
     predicted_values_df = pd.DataFrame(
         predicted_values, columns=['activities [10 sec]'])
@@ -48,8 +47,8 @@ def predict_data(data_df, config, settings, file_name, file, chunk_size):
 
     # values per minute
     # Define the chunk size
-    chunks = [predicted_values[i:i + chunk_size]
-              for i in range(0, len(predicted_values), chunk_size)]
+    chunks = [predicted_values[i:i + settings['chunk_size']]
+              for i in range(0, len(predicted_values), settings['chunk_size'])]
 
     most_common_per_chunk = [mean_value(chunk) for chunk in chunks[:-1]]
     most_common_per_chunk_df = pd.DataFrame(

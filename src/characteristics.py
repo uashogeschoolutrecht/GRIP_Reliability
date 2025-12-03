@@ -1,17 +1,9 @@
 import numpy as np
 from neurokit2.complexity import complexity_lempelziv
 import EntropyHub as EH
-import statistics
-from src.utils import *
-import logging
-from datetime import date
 import pandas as pd
 import numpy as np
-import yaml
-from src.utils import *
-import os
-import tensorflow as tf
-import matplotlib.pyplot as plt
+from SRC.utils import *
 from collections import Counter
 
 
@@ -41,7 +33,6 @@ def characteristics(results, data):
     sedentairy = []
     light = []
     moderate = []
-    vigorous = []
     for epoch in epochs:
         if epoch[0] == 0:
             sedentairy.append(epoch)
@@ -49,8 +40,6 @@ def characteristics(results, data):
             light.append(epoch)
         elif epoch[0] == 2:
             moderate.append(epoch)
-        else:
-            vigorous.append(epoch)
 
     # Get results per activity
     unique, counts = np.unique(data, return_counts=True)
@@ -61,8 +50,6 @@ def characteristics(results, data):
             activity = 'light'
         elif i[0] == 2:
             activity = 'moderate'
-        else:
-            activity = 'vigorous'
         results[f'{activity}_count'] = i[1]
         results[f'{activity}_perc'] = i[1] / len(data) * 100
 
@@ -95,8 +82,8 @@ def characteristics(results, data):
 
 def transitions(data, results):
     # Calculates the time normalised transitions from sedentairy to light etc.
-    for i in range(4):
-        for j in range(4):
+    for i in range(3):
+        for j in range(3):
             if i != j:
                 results[f'norm_transitions_{i}_{j}'] = 0
 
@@ -104,8 +91,8 @@ def transitions(data, results):
         if data[num] - data[num-1] != 0:
             results[f'norm_transitions_{int(data[num])}_{int(data[num-1])}'] += 1
 
-    for i in range(4):
-        for j in range(4):
+    for i in range(3):
+        for j in range(3):
             if i != j:
                 results[f'norm_transitions_{i}_{j}'] /= (len(data) / 100)
     return results
